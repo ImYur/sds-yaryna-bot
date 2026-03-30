@@ -4,7 +4,7 @@ from http.server import HTTPServer, BaseHTTPRequestHandler
 
 from telegram import Update, ReplyKeyboardMarkup
 from telegram.ext import (
-    ApplicationBuilder,
+    Application,
     CommandHandler,
     MessageHandler,
     ContextTypes,
@@ -21,7 +21,8 @@ keyboard = [["💬 Чатик", "📂 Проекти"]]
 reply_markup = ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
 
 
-class SimpleHandler(BaseHTTPRequestHandler):
+# 👉 фейковий сервер для Render
+class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         self.send_response(200)
         self.end_headers()
@@ -31,17 +32,15 @@ class SimpleHandler(BaseHTTPRequestHandler):
         return
 
 
-def run_dummy_web_server():
+def run_server():
     port = int(os.environ.get("PORT", 10000))
-    server = HTTPServer(("0.0.0.0", port), SimpleHandler)
+    server = HTTPServer(("0.0.0.0", port), Handler)
     server.serve_forever()
 
 
+# 👉 логіка бота
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text(
-        "Привіт 👋\nОбери розділ:",
-        reply_markup=reply_markup
-    )
+    await update.message.reply_text("Привіт 👋", reply_markup=reply_markup)
 
 
 async def message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -54,11 +53,7 @@ async def message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if user_id in MANAGER_IDS:
         if text == "💬 Чатик":
             CHAT_MODE[user_id] = True
-            await update.message.reply_text("Ти в чатику з дизайнером ✍️")
-            return
-
-        if text == "📂 Проекти":
-            await update.message.reply_text("Розділ 'Проекти' поки що в розробці.")
+            await update.message.reply_text("Ти в чаті з дизайнером ✍️")
             return
 
         if CHAT_MODE.get(user_id):
@@ -69,25 +64,18 @@ async def message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     if user_id == DESIGNER_ID:
-        if text == "💬 Чатик":
-            await update.message.reply_text("Ти в чатику з менеджерами ✍️")
-            return
-
-        if text == "📂 Проекти":
-            await update.message.reply_text("Розділ 'Проекти' поки що в розробці.")
-            return
-
-        for manager_id in MANAGER_IDS:
+        for manager in MANAGER_IDS:
             await context.bot.send_message(
-                chat_id=manager_id,
+                chat_id=manager,
                 text=f"Дизайнер:\n{text}"
             )
 
 
+# 👉 запуск
 def main():
-    threading.Thread(target=run_dummy_web_server, daemon=True).start()
+    threading.Thread(target=run_server, daemon=True).start()
 
-    app = ApplicationBuilder().token(BOT_TOKEN).build()
+    app = Application.builder().token(BOT_TOKEN).build()
 
     app.add_handler(CommandHandler("start", start))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, message_handler))
