@@ -1,4 +1,5 @@
 import os
+import asyncio
 from telegram import Update, ReplyKeyboardMarkup
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters, ContextTypes
 
@@ -18,7 +19,6 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.message.from_user.id
 
-    # Якщо менеджер
     if user_id in MANAGERS:
         text = update.message.text
 
@@ -33,7 +33,6 @@ async def message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 text=f"Менеджер:\n{text}"
             )
 
-    # Якщо дизайнер
     elif user_id == DESIGNER_ID:
         text = update.message.text
 
@@ -43,9 +42,13 @@ async def message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 text=f"Дизайнер:\n{text}"
             )
 
-app = ApplicationBuilder().token(BOT_TOKEN).build()
+async def main():
+    app = ApplicationBuilder().token(BOT_TOKEN).build()
 
-app.add_handler(CommandHandler("start", start))
-app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, message_handler))
+    app.add_handler(CommandHandler("start", start))
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, message_handler))
 
-app.run_polling()
+    await app.run_polling()
+
+if __name__ == "__main__":
+    asyncio.run(main())
