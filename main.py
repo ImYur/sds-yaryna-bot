@@ -29,6 +29,7 @@ USER_NAMES = {
     911772912: "Юра",
     766774400: "Маркіян",
     331127622: "Елла",
+    540170329: "Семен",
 }
 
 ALL_USERS = list(dict.fromkeys(MANAGER_IDS + [DESIGNER_ID]))
